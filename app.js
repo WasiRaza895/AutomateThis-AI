@@ -164,7 +164,7 @@ Write concise, practical steps that a no-code builder can implement in Zapier, M
     recipe: pattern.recipe,
     risks: pattern.risks,
     prompt,
-    linkedinHook: `I built an AI commander that turns messy ${role.toLowerCase()} workflows into no-code automation plans. This one can save about ${savedHours.toFixed(
+    linkedinHook: `I built AutomateThis AI, a tool that turns messy ${role.toLowerCase()} workflows into no-code automation plans. This one can save about ${savedHours.toFixed(
       1
     )} hours/month by automating: ${pattern.automation}`
   };

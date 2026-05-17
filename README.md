@@ -1,6 +1,6 @@
-# No-Code Automation Commander
+# AutomateThis AI
 
-No-Code Automation Commander is a static AI automation planning app. Describe a repetitive workflow and it generates a practical automation blueprint: best automation angle, ROI estimate, recommended no-code stack, implementation recipe, AI prompt, risk controls, and a LinkedIn-ready hook.
+AutomateThis AI is a static AI automation planning app. Describe a repetitive workflow and it generates a practical automation blueprint: best automation angle, ROI estimate, recommended no-code stack, implementation recipe, AI prompt, risk controls, and a LinkedIn-ready hook.
 
 It is built to be simple to share on LinkedIn and easy to run from GitHub Pages.
 
@@ -38,7 +38,7 @@ That is it. The app is static and runs locally.
 ## LinkedIn Launch Post
 
 ```text
-I built No-Code Automation Commander.
+I built AutomateThis AI.
 
 Describe a repetitive business workflow and it generates:
 - the best automation angle
@@ -48,7 +48,7 @@ Describe a repetitive business workflow and it generates:
 - step-by-step no-code build plan
 - risk controls
 
-Comment "COMMANDER" and I will send you the GitHub repo.
+Comment "AUTOMATE" and I will send you the GitHub repo.
 ```
 
 ## Best Use Cases

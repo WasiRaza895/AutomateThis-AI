@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for improving No-Code Automation Commander.
+Thanks for improving AutomateThis AI.
 
 Good contributions include:
 
