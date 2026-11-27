@@ -112,11 +112,13 @@ function displayAudit(audit, focus) {
   const mode = { sample: "Sample audit", rules: "Website audit · Built-in rules", gemini: "Website audit · Gemini assisted" };
   byId("result-mode").textContent = mode[audit.mode];
   byId("results-title").textContent = audit.company;
+  byId("business-label").textContent = audit.business?.label ?? "Business type unclear from the pages read";
   byId("company-summary").textContent = audit.summary;
+  byId("business-source").replaceChildren(...(audit.business ? [sourceItem(audit.business.source)] : []));
   byId("source-count").textContent = `${audit.pages.length} ${audit.mode === "sample" ? "sample" : "public"} page${audit.pages.length === 1 ? "" : "s"}`;
   byId("source-list").replaceChildren(...audit.pages.map((source) => sourceItem(source)));
   const count = audit.opportunities.length;
-  const ranking = count ? `${count} ${count === 1 ? "opportunity" : "opportunities"} ranked by ease, impact, and AI fit.` : "The scanned pages didn’t support a specific automation. Try a more detailed service page or use the manual planner.";
+  const ranking = count ? `${count} ${count === 1 ? "opportunity" : "opportunities"} ranked by fit with the business, ease, impact, and AI fit.` : "The scanned pages didn’t support a specific automation. Try a more detailed service page or use the manual planner.";
   const message = audit.modelUnavailable ? `Gemini was unavailable for this scan. ${ranking}` : ranking;
   notice("result-notice", message);
   renderCards();
@@ -131,7 +133,7 @@ async function loadAudit(url = null, focus = true) {
   byId("scan-button").disabled = true;
   byId("sample-button").disabled = true;
   byId("website").readOnly = true;
-  if (url) notice("scan-status", "Reading public pages and ranking automation opportunities…");
+  if (url) notice("scan-status", "Reading public pages to identify the business and its customer workflows…");
   else notice("scan-status", "");
   try {
     const response = await fetch(url ? "/api/audit" : "/api/sample", url ? {
@@ -167,7 +169,7 @@ function updateEstimate() {
 }
 
 function exportData() {
-  return { company: state.audit.company, website: state.audit.domain, analysisMode: state.audit.mode, ...state.selected, estimate: estimate() };
+  return { company: state.audit.company, website: state.audit.domain, business: state.audit.business, analysisMode: state.audit.mode, ...state.selected, estimate: estimate() };
 }
 
 function markdown(data) {
@@ -175,7 +177,7 @@ function markdown(data) {
     ? `${data.estimate.hoursPerMonth} hours/month${data.estimate.monthlyValue === null ? "" : ` · $${data.estimate.monthlyValue}/month`}, based on your inputs.`
     : "Add your runs per week and time saved to estimate the impact.";
   return [
-    `# ${data.title}`, data.company, `## Why this fits\n${data.reason}`, `## Sources\n${data.evidence.map(({ title, url }) => `- ${title}${data.analysisMode === "sample" ? " (sample page)" : ` · ${url}`}`).join("\n")}`,
+    `# ${data.title}`, data.business ? `${data.company} · ${data.business.label}` : data.company, `## Why this fits\n${data.reason}`, `## Sources\n${data.evidence.map(({ title, url }) => `- ${title}${data.analysisMode === "sample" ? " (sample page)" : ` · ${url}`}`).join("\n")}`,
     `## Opportunity\n${data.score}/100 priority · ${effortLabel(data.effort)}\n${estimateLine}`,
     `## Recommended stack\n${data.stack.map((tool) => `- ${tool}`).join("\n")}`,
     `## Workflow recipe\n${data.steps.map((step, index) => `${index + 1}. ${step.label} — ${step.detail}`).join("\n")}`,

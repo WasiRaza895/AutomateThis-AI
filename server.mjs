@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
+import { Readable } from "node:stream";
 import { pathToFileURL } from "node:url";
-import { AuditError, crawlSite } from "./lib/crawl.mjs";
-import { makeAudit, sampleAudit } from "./lib/audit.mjs";
+import { createApi } from "./lib/api.mjs";
 
 const assets = new Map([
   ["/", ["index.html", "text/html"]], ["/index.html", ["index.html", "text/html"]],
@@ -14,40 +14,15 @@ const assets = new Map([
 function send(response, status, body, type) {
   response.writeHead(status, {
     "Content-Type": `${type}; charset=utf-8`, "X-Content-Type-Options": "nosniff",
-    "Content-Security-Policy": "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+    "Content-Security-Policy": "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:",
     "Referrer-Policy": "no-referrer",
     "Cache-Control": "no-store",
   });
   response.end(body);
 }
 
-function json(response, status, data) {
-  send(response, status, JSON.stringify(data), "application/json");
-}
-
-async function readJson(request) {
-  if (!/^application\/json(?:\s*;|$)/i.test(request.headers["content-type"] ?? "")) {
-    throw new AuditError("Send the website address as JSON.");
-  }
-  const chunks = [];
-  let size = 0;
-  for await (const chunk of request.iterator({ destroyOnReturn: false })) {
-    size += chunk.length;
-    if (size > 4 * 1024) {
-      request.resume();
-      throw new AuditError("Enter a shorter website address.");
-    }
-    chunks.push(chunk);
-  }
-  try {
-    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
-  } catch {
-    throw new AuditError("Enter a valid website address.");
-  }
-}
-
-export function createApp({ crawl = crawlSite, apiKey = process.env.GEMINI_API_KEY, model = process.env.GEMINI_MODEL } = {}) {
-  let activeAudits = 0;
+export function createApp(options) {
+  const handleApi = createApi(options);
   return createServer({ requestTimeout: 30000, headersTimeout: 10000 }, async (request, response) => {
     const path = request.url.split("?")[0];
     try {
@@ -56,37 +31,15 @@ export function createApp({ crawl = crawlSite, apiKey = process.env.GEMINI_API_K
         send(response, 200, await readFile(new URL(file, import.meta.url)), type);
         return;
       }
-      if (request.method === "GET" && path === "/api/sample") {
-        json(response, 200, await sampleAudit());
-        return;
-      }
-      if (request.method === "POST" && path === "/api/audit") {
-        const origin = request.headers.origin;
-        if (origin && new URL(origin).host !== request.headers.host) {
-          json(response, 403, { error: "Open AutomateThis AI directly to start a scan." });
-          return;
-        }
-        if (activeAudits >= 3) {
-          json(response, 429, { error: "The scanner is busy. Try again in a moment." });
-          return;
-        }
-        activeAudits += 1;
-        try {
-          const fields = await readJson(request);
-          const pages = await crawl(fields?.url);
-          json(response, 200, await makeAudit(pages, { apiKey, ...(model ? { model } : {}) }));
-        } finally {
-          activeAudits -= 1;
-        }
-        return;
-      }
-      json(response, 404, { error: "Page not found." });
+      const address = new URL(request.url, `http://${request.headers.host || "localhost"}`);
+      const body = request.method === "POST" ? { body: Readable.toWeb(request), duplex: "half" } : {};
+      const result = await handleApi(new Request(address, { method: request.method, headers: request.headers, ...body }));
+      if (!request.readableEnded) request.resume();
+      response.writeHead(result.status, Object.fromEntries(result.headers));
+      response.end(await result.text());
     } catch (error) {
-      const expected = error instanceof AuditError;
-      if (!expected) console.error("Audit request failed", error.name);
-      if (!response.headersSent) json(response, expected ? 400 : 500, {
-        error: expected ? error.message : "The scan could not finish. Try again in a moment.",
-      });
+      console.error("Request failed", error.name);
+      if (!response.headersSent) send(response, 500, JSON.stringify({ error: "The request could not finish. Try again in a moment." }), "application/json");
     }
   });
 }

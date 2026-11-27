@@ -1,6 +1,6 @@
 # AutomateThis AI
 
-AutomateThis AI scans a company’s public website and ranks up to three quick wins. Each recommendation links to supporting pages and includes a 3D workflow, a no-code stack, a recipe, an AI prompt, risk controls, and Markdown and JSON exports. The original browser-only manual planner is available under **Manual planner**.
+AutomateThis AI scans a company’s public website, identifies its core business when the pages support a clear inference, and ranks up to three quick wins. Each recommendation links to supporting pages and includes a 3D workflow, a no-code stack, a recipe, an AI prompt, risk controls, and Markdown and JSON exports. The original browser-only manual planner is available under **Manual planner**.
 
 ## Why This Exists
 
@@ -18,6 +18,7 @@ Most people know AI automation is useful, but they do not know what to automate 
 - Markdown copy export
 - JSON blueprint export
 - Website scan and optional Gemini-assisted analysis
+- Business-specific playbooks for payment services, online retail, and software
 - Editable savings estimates in the website audit
 - Browser-only manual planner
 
@@ -34,11 +35,11 @@ Open `http://127.0.0.1:8780`, enter a public company website, or choose **Try a 
 
 ### Gemini setup
 
-Copy `.env.example` to `.env` and set `GEMINI_API_KEY` on the server. Without a key, the website scan uses built-in rules grounded in the pages it read. The report identifies its analysis mode. Set `GEMINI_MODEL` to choose another Gemini model that supports structured output.
+Copy `.env.example` to `.env` and set `GEMINI_API_KEY` on the server. Built-in analysis uses signals from home, product, pricing, and support pages and works without a key. The report identifies its analysis mode. Set `GEMINI_MODEL` to choose another Gemini model that supports structured output.
 
 ### Hosting
 
-The website audit calls the Node.js server in `server.mjs`. Set `HOST=0.0.0.0` and pass your hosting provider’s `PORT` when deploying it. A static host such as GitHub Pages can serve `planner.html` and its assets.
+Vercel uses the included `vercel.json` and Node.js functions under `api/`. Add `GEMINI_API_KEY` as a server environment variable to enable Gemini. For a Node.js host, run `npm start`, set `HOST=0.0.0.0`, and use the provider’s `PORT`. Static-only hosting can serve `planner.html` and its assets.
 
 ### Tests
 

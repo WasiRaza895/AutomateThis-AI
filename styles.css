@@ -1,14 +1,14 @@
 :root {
   color-scheme: light;
-  --bg: #f6f3ee;
+  --bg: #faf7f8;
   --ink: #161616;
   --muted: #63605a;
   --panel: #ffffff;
-  --line: #ded8cf;
-  --accent: #12645f;
-  --accent-2: #b4432f;
-  --accent-3: #315f9d;
-  --soft: #e9f3f0;
+  --line: #eadde5;
+  --accent: #71385d;
+  --accent-2: #9a503f;
+  --accent-3: #75527c;
+  --soft: #f5e9f2;
   --shadow: 0 18px 45px rgba(32, 27, 21, 0.12);
 }
 
@@ -19,8 +19,8 @@
 body {
   margin: 0;
   background:
-    linear-gradient(135deg, rgba(18, 100, 95, 0.12), transparent 32%),
-    linear-gradient(315deg, rgba(180, 67, 47, 0.1), transparent 34%),
+    linear-gradient(135deg, rgba(113, 56, 93, 0.12), transparent 32%),
+    linear-gradient(315deg, rgba(154, 80, 63, 0.1), transparent 34%),
     var(--bg);
   color: var(--ink);
   font-family:
@@ -52,7 +52,7 @@ textarea {
   border: 1px solid var(--line);
   background:
     linear-gradient(120deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.58)),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='520' viewBox='0 0 900 520'%3E%3Cg fill='none' stroke='%2312645f' stroke-opacity='.16' stroke-width='2'%3E%3Cpath d='M58 407h151l54-72h134l42-62h185l53-91h151'/%3E%3Cpath d='M112 143h128l39 62h172l62 96h131l48 76h96'/%3E%3Cpath d='M76 280h108l49-54h146l51 54h122l67-112h174'/%3E%3C/g%3E%3Cg fill='%23b4432f' fill-opacity='.28'%3E%3Ccircle cx='209' cy='407' r='8'/%3E%3Ccircle cx='397' cy='335' r='8'/%3E%3Ccircle cx='624' cy='273' r='8'/%3E%3Ccircle cx='677' cy='182' r='8'/%3E%3C/g%3E%3Cg fill='%23315f9d' fill-opacity='.24'%3E%3Crect x='109' y='128' width='116' height='30' rx='5'/%3E%3Crect x='440' y='286' width='116' height='30' rx='5'/%3E%3Crect x='682' y='362' width='116' height='30' rx='5'/%3E%3C/g%3E%3C/svg%3E");
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='520' viewBox='0 0 900 520'%3E%3Cg fill='none' stroke='%2371385d' stroke-opacity='.16' stroke-width='2'%3E%3Cpath d='M58 407h151l54-72h134l42-62h185l53-91h151'/%3E%3Cpath d='M112 143h128l39 62h172l62 96h131l48 76h96'/%3E%3Cpath d='M76 280h108l49-54h146l51 54h122l67-112h174'/%3E%3C/g%3E%3Cg fill='%239a503f' fill-opacity='.28'%3E%3Ccircle cx='209' cy='407' r='8'/%3E%3Ccircle cx='397' cy='335' r='8'/%3E%3Ccircle cx='624' cy='273' r='8'/%3E%3Ccircle cx='677' cy='182' r='8'/%3E%3C/g%3E%3Cg fill='%2375527c' fill-opacity='.24'%3E%3Crect x='109' y='128' width='116' height='30' rx='5'/%3E%3Crect x='440' y='286' width='116' height='30' rx='5'/%3E%3Crect x='682' y='362' width='116' height='30' rx='5'/%3E%3C/g%3E%3C/svg%3E");
   background-size: cover;
   border-radius: 8px;
   box-shadow: var(--shadow);
@@ -106,7 +106,7 @@ h3 {
 .hero-panel {
   min-height: 165px;
   padding: 20px;
-  border: 1px solid rgba(18, 100, 95, 0.22);
+  border: 1px solid rgba(113, 56, 93, 0.22);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.88);
   display: flex;
@@ -194,7 +194,7 @@ textarea:focus,
 select:focus,
 input[type="number"]:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(18, 100, 95, 0.14);
+  box-shadow: 0 0 0 3px rgba(113, 56, 93, 0.14);
 }
 
 .field-grid {
@@ -279,7 +279,7 @@ fieldset {
 }
 
 .score-strip div:nth-child(2) {
-  background: #edf0f7;
+  background: #f4eaf3;
 }
 
 .score-strip div:nth-child(3) {

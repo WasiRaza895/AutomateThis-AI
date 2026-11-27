@@ -23,7 +23,7 @@
       <div class="hero-content">
         <p class="hero-kicker"><span aria-hidden="true"></span> WEBSITE AUTOMATION AUDIT</p>
         <h1 id="hero-title">Find your next <em>three automations.</em></h1>
-        <p class="hero-intro">Enter your company website. Find the repeat work you could automate first and get a plan to build it.</p>
+        <p class="hero-intro">Enter a company website. See what the business does, then get three workflow ideas grounded in how it serves customers.</p>
         <form id="audit-form" class="audit-form">
           <label for="website">Company website</label>
           <div class="search-field">
@@ -50,8 +50,12 @@
 
     <section id="results" class="results" aria-labelledby="results-title" hidden>
       <div class="results-head">
-        <div><p id="result-mode" class="results-label"></p><h2 id="results-title" tabindex="-1"></h2><p id="company-summary" class="section-description"></p></div>
+        <div><p id="result-mode" class="results-label"></p><h2 id="results-title" tabindex="-1"></h2></div>
         <details class="sources"><summary id="source-count">Pages read</summary><ul id="source-list"></ul></details>
+      </div>
+      <div class="business-context">
+        <h3>Core business</h3><p id="business-label" class="business-label"></p>
+        <p id="company-summary" class="section-description"></p><ul id="business-source" class="context-source"></ul>
       </div>
       <p id="result-notice" class="notice" hidden></p>
       <div id="opportunities" class="opportunity-grid" aria-label="Ranked automation opportunities"></div>
