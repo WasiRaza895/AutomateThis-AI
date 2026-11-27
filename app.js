@@ -113,7 +113,7 @@ function matchPattern(text) {
     }))
     .sort((a, b) => b.hits - a.hits);
 
-  return ranked[0].hits > 0 ? ranked[0] : patterns[3];
+  return ranked[0].hits > 0 ? ranked[0] : { ...patterns[3], hits: 0 };
 }
 
 function createPlan() {
@@ -129,8 +129,9 @@ function createPlan() {
   const monthlyHours = weeklyHours * 4.33;
   const automationCoverage = Math.min(0.82, 0.42 + pattern.hits * 0.08 + tools.length * 0.025);
   const savedHours = monthlyHours * automationCoverage;
-  const monthlyValue = Math.round(savedHours * rate);
-  const score = Math.min(96, Math.round(55 + pattern.hits * 7 + Math.min(savedHours, 25)));
+  const matched = pattern.hits > 0;
+  const monthlyValue = matched ? Math.round(savedHours * rate) : null;
+  const score = matched ? Math.min(96, Math.round(55 + pattern.hits * 7 + Math.min(savedHours, 25))) : null;
   const toolStack = [...new Set([...pattern.stack, ...tools])];
 
   const prompt = `You are an AI automation analyst for a ${role}.
@@ -150,7 +151,7 @@ Write concise, practical steps that a no-code builder can implement in Zapier, M
 
   return {
     project: pattern.name,
-    automation: pattern.automation,
+    automation: matched ? pattern.automation : `General starting point. No template matched this workflow. ${pattern.automation}`,
     role,
     goal,
     sourceWorkflow: text,
@@ -158,15 +159,15 @@ Write concise, practical steps that a no-code builder can implement in Zapier, M
     minutesPerRun: minutes,
     hourlyValue: rate,
     score,
-    savedHours: Number(savedHours.toFixed(1)),
+    savedHours: matched ? Number(savedHours.toFixed(1)) : null,
     monthlyValue,
     stack: toolStack,
     recipe: pattern.recipe,
     risks: pattern.risks,
     prompt,
-    linkedinHook: `I built AutomateThis AI, a tool that turns messy ${role.toLowerCase()} workflows into no-code automation plans. This one can save about ${savedHours.toFixed(
-      1
-    )} hours/month by automating: ${pattern.automation}`
+    linkedinHook: matched
+      ? `I’m exploring a no-code plan for ${role.toLowerCase()} workflows. This could save about ${savedHours.toFixed(1)} hours/month. ${pattern.automation}`
+      : "I’m mapping a repetitive workflow and will validate its savings once I identify which steps can be automated."
   };
 }
 
@@ -180,10 +181,10 @@ function fillList(node, items) {
 }
 
 function renderPlan(plan) {
-  output.heroSavings.textContent = `${plan.savedHours}h/mo`;
-  output.score.textContent = plan.score;
-  output.hoursSaved.textContent = `${plan.savedHours}/mo`;
-  output.monthlyValue.textContent = `$${plan.monthlyValue.toLocaleString()}`;
+  output.heroSavings.textContent = plan.savedHours === null ? "—" : `${plan.savedHours}h/mo`;
+  output.score.textContent = plan.score ?? "—";
+  output.hoursSaved.textContent = plan.savedHours === null ? "—" : `${plan.savedHours}/mo`;
+  output.monthlyValue.textContent = plan.monthlyValue === null ? "—" : `$${plan.monthlyValue.toLocaleString()}`;
   output.bestAutomation.textContent = plan.automation;
   fillList(output.stackList, plan.stack);
   fillList(output.recipeList, plan.recipe);
@@ -199,9 +200,9 @@ function toMarkdown(plan) {
 ${plan.automation}
 
 ## ROI Estimate
-- Automation score: ${plan.score}/100
-- Time saved: ${plan.savedHours} hours/month
-- Estimated monthly value: $${plan.monthlyValue.toLocaleString()}
+- Automation score: ${plan.score === null ? "Unrated" : `${plan.score}/100`}
+- Time saved: ${plan.savedHours === null ? "Unestimated" : `${plan.savedHours} hours/month`}
+- Estimated monthly value: ${plan.monthlyValue === null ? "Unestimated" : `$${plan.monthlyValue.toLocaleString()}`}
 
 ## Recommended Stack
 ${plan.stack.map((item) => `- ${item}`).join("\n")}

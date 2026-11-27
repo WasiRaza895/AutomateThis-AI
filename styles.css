@@ -366,3 +366,8 @@ pre {
     flex-direction: column;
   }
 }
+.studio-link {
+  display: inline-flex;
+  margin-bottom: 1rem;
+  text-decoration: none;
+}
