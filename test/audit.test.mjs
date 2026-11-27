@@ -62,6 +62,17 @@ test("core product pages outweigh incidental topics and drive three distinct wor
   assert.ok(result.opportunities.every(({ coreFit, evidence }) => coreFit && evidence.every(({ url }) => !url.includes("/blog/"))));
 });
 
+test("retail business summaries feature catalog items over promotions", async () => {
+  const pages = [{
+    url: "https://shop.example/", title: "Example Shop", description: "Free shipping on most orders.",
+    content: "Shop all. Free shipping. SHOP WAXED CANVAS BAGS", snippets: ["SHOP BLACK FRIDAY", "Free shipping on most orders.", "SHOP WAXED CANVAS BAGS"],
+    form: false,
+  }];
+  const result = await makeAudit({ domain: "shop.example", pages });
+  assert.equal(result.business.label, "Online retail");
+  assert.equal(result.summary, "Featured products include waxed canvas bags.");
+});
+
 test("hosted handler and local adapter use the same bounded API", async () => {
   const endpoint = "https://demo.example/api/audit";
   const api = createApi({ apiKey: "", crawl: async (url) => {
