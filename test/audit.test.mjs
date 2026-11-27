@@ -90,26 +90,90 @@ test("hosted handler and local adapter use the same bounded API", async () => {
   assert.equal((await response.json()).company, "Example");
 });
 
-test("Gemini suggestions use verified page indices and a failed call falls back to rules", async () => {
-  const pages = [{ url: "https://studio.example/contact", title: "Example Studio", description: "Public quote form", content: "Request a quote or reach our team.", form: true }];
-  const suggestion = {
-    category: "leads", title: "Route new quote requests", reason: "A quote form is visible.", effort: 1, impact: 5, aiFit: 4,
-    steps: ["Read a submission", "Classify its topic", "Check the output", "Send internally"], stack: ["Email"], risks: ["Require review"], sources: [0, 8],
-  };
-  const result = await makeAudit({ domain: "studio.example", pages }, { apiKey: "test-only", fetch: async (url, options) => {
-    assert.match(url, /generateContent$/);
-    assert.equal(options.headers["x-goog-api-key"], "test-only");
-    const payload = JSON.parse(options.body);
-    assert.ok(payload.generationConfig.responseJsonSchema);
-    const response = { company: "Example Studio", summary: "A studio with a quote form.", opportunities: [suggestion] };
-    return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify(response) }] } }] }), { status: 200 });
-  } });
-  assert.equal(result.mode, "gemini");
-  assert.equal(result.opportunities[0].title, suggestion.title);
-  assert.deepEqual(result.opportunities[0].evidence.map(({ url }) => url), [pages[0].url]);
+const aiSite = {
+  domain: "studio.example",
+  pages: [{
+    url: "https://studio.example/contact", title: "Example Studio", description: "Public quote form",
+    content: "Request a quote for web design. Include your project timeline, budget, and existing website.", form: true,
+  }],
+};
+const apiKey = "test-only-key";
+const sampleQuote = { index: 0, quote: "Request a quote for web design." };
+const aiSuggestion = {
+  category: "other", title: "Check scope before drafting quotes", reason: "A quote form is visible.", effort: 2, impact: 4, aiFit: 4,
+  steps: ["Read a submission", "Classify its scope", "Check the output", "Save a draft"], stack: ["Email"], risks: ["Require review"],
+  evidence: [sampleQuote, { index: 8, quote: sampleQuote.quote }],
+};
+const aiResponse = {
+  company: "Example Studio", summary: "A web design studio with a custom quote form.",
+  businessLabel: "Web design services", businessEvidence: [sampleQuote],
+  opportunities: [
+    aiSuggestion,
+    { ...aiSuggestion, title: "Prepare a project timeline", evidence: [{ index: 0, quote: "Include your project timeline, budget, and existing website." }] },
+    { ...aiSuggestion, title: "Draft a site handoff checklist" },
+  ],
+};
+const wrapResponse = {
+  gemini: (text) => ({ candidates: [{ content: { parts: [{ thought: true, text: "reasoning" }, { text }] } }] }),
+  claude: (text) => ({ content: [{ type: "text", text }] }),
+  openai: (text) => ({ output: [{ type: "reasoning" }, { type: "message", content: [{ type: "output_text", text }] }] }),
+};
+const auditRequest = (body) => new Request("https://demo.example/api/audit", {
+  method: "POST", headers: { "content-type": "application/json", origin: "https://demo.example" }, body: JSON.stringify(body),
+});
 
-  const fallback = await makeAudit({ domain: "studio.example", pages }, { apiKey: "test-only", fetch: async () => new Response(null, { status: 429 }) });
-  assert.equal(fallback.mode, "rules");
-  assert.equal(fallback.modelUnavailable, true);
-  assert.ok(fallback.opportunities.length);
+for (const [provider, host, credentialHeader] of [
+  ["gemini", "generativelanguage.googleapis.com", "x-goog-api-key"],
+  ["claude", "api.anthropic.com", "x-api-key"],
+  ["openai", "api.openai.com", "Authorization"],
+]) {
+  test(`${provider} uses a one-scan key and returns three verified AI suggestions`, async () => {
+    let calls = 0;
+    const api = createApi({ apiKey: "", crawl: async () => aiSite, fetchModel: async (url, options) => {
+      calls += 1;
+      assert.equal(new URL(url).host, host);
+      assert.equal(options.redirect, "error");
+      assert.equal(options.headers[credentialHeader], provider === "openai" ? `Bearer ${apiKey}` : apiKey);
+      assert.ok(options.body.includes("Request a quote for web design."));
+      assert.ok(!options.body.includes(apiKey));
+      const payload = JSON.parse(options.body);
+      if (provider === "openai") assert.equal(payload.store, false);
+      const shape = payload.generationConfig?.responseJsonSchema ?? payload.output_config?.format.schema ?? payload.text?.format.schema;
+      assert.equal(shape.additionalProperties, false);
+      return Response.json(wrapResponse[provider](JSON.stringify(aiResponse)));
+    } });
+    const result = await api(auditRequest({ url: aiSite.domain, ai: { provider, apiKey, endpoint: "https://unrelated.example" } }));
+    const text = await result.text();
+    assert.ok(!text.includes(apiKey));
+    const report = JSON.parse(text);
+    assert.equal(report.mode, provider);
+    assert.equal(report.business.label, aiResponse.businessLabel);
+    assert.equal(report.opportunities.length, 3);
+    assert.ok(report.opportunities.every(({ origin }) => origin === "ai"));
+    assert.deepEqual(report.opportunities[0].evidence, [{ title: "Example Studio", url: aiSite.pages[0].url, excerpt: sampleQuote.quote }]);
+    const next = await api(auditRequest({ url: aiSite.domain }));
+    assert.equal((await next.json()).mode, "rules");
+    assert.equal(calls, 1);
+  });
+}
+
+test("rejected keys and unsupported evidence fall back without exposing provider errors", async () => {
+  for (const [issue, response] of [
+    ["access", new Response(`Rejected ${apiKey}`, { status: 401 })],
+    ["limit", new Response(null, { status: 429 })],
+    ["evidence", Response.json(wrapResponse.gemini(JSON.stringify({
+      ...aiResponse, opportunities: [{ ...aiSuggestion, evidence: [{ index: 0, quote: "The company offers free express shipping." }] }],
+    })))],
+  ]) {
+    const report = await makeAudit(aiSite, { apiKey, fetch: async () => response });
+    assert.equal(report.mode, "rules");
+    assert.equal(report.analysisProvider, "gemini");
+    assert.equal(report.modelIssue, issue);
+    assert.ok(report.opportunities.length);
+    assert.ok(!JSON.stringify(report).includes(apiKey));
+  }
+  const api = createApi({ crawl: async () => assert.fail("An invalid provider must fail before crawling") });
+  const rejected = await api(auditRequest({ url: aiSite.domain, ai: { provider: "https://unrelated.example", apiKey } }));
+  assert.equal(rejected.status, 400);
+  assert.ok(!(await rejected.text()).includes(apiKey));
 });

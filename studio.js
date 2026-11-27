@@ -2,6 +2,7 @@ const byId = (id) => document.getElementById(id);
 const state = { audit: null, selected: null, busy: false, estimates: new Map() };
 const metrics = [byId("estimate-runs"), byId("estimate-minutes"), byId("estimate-rate")];
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const providerNames = { gemini: "Gemini", claude: "Claude", openai: "OpenAI" };
 let motionEnabled = !reducedMotion.matches;
 
 function element(tag, className, text) {
@@ -53,7 +54,7 @@ function renderCards() {
     const top = element("span", "opportunity-top");
     top.append(element("span", "rank", String(index + 1)), element("span", "effort", effortLabel(item.effort)));
     button.append(top, element("strong", "", item.title), element("span", "opportunity-reason", item.reason),
-      element("small", "", `${item.score}/100 priority · ${item.evidence.length} source${item.evidence.length === 1 ? "" : "s"}`));
+      element("small", "", `${item.score}/100 priority · ${item.evidence.length} source${item.evidence.length === 1 ? "" : "s"}${item.origin === "ai" ? " · AI-assisted" : ""}`));
     button.addEventListener("click", () => showBlueprint(item, true));
     return button;
   });
@@ -109,8 +110,9 @@ function displayAudit(audit, focus) {
   state.selected = audit.opportunities[0] ?? null;
   state.estimates.clear();
   byId("results").hidden = false;
-  const mode = { sample: "Sample audit", rules: "Website audit · Built-in rules", gemini: "Website audit · Gemini assisted" };
-  byId("result-mode").textContent = mode[audit.mode];
+  const providerName = providerNames[audit.analysisProvider];
+  const mode = { sample: "Sample audit", rules: "Website audit · Built-in rules" };
+  byId("result-mode").textContent = mode[audit.mode] ?? `Website audit · ${providerNames[audit.mode]} assisted`;
   byId("results-title").textContent = audit.company;
   byId("business-label").textContent = audit.business?.label ?? "Business type unclear from the pages read";
   byId("company-summary").textContent = audit.summary;
@@ -119,7 +121,17 @@ function displayAudit(audit, focus) {
   byId("source-list").replaceChildren(...audit.pages.map((source) => sourceItem(source)));
   const count = audit.opportunities.length;
   const ranking = count ? `${count} ${count === 1 ? "opportunity" : "opportunities"} ranked by fit with the business, ease, impact, and AI fit.` : "The scanned pages didn’t support a specific automation. Try a more detailed service page or use the manual planner.";
-  const message = audit.modelUnavailable ? `Gemini was unavailable for this scan. ${ranking}` : ranking;
+  const modelIssues = {
+    access: "Check your API key and model access.",
+    limit: "Check your provider’s API quota or billing.",
+    timeout: "The model took too long to respond.",
+    evidence: "The model could not support its ideas with quotes from the pages read.",
+    unavailable: "The model could not complete this scan.",
+  };
+  const mixed = providerName && audit.mode !== "rules" && audit.opportunities.some((item) => item.origin === "rules");
+  let message = ranking;
+  if (audit.modelIssue) message = `${providerName} analysis fell back to built-in rules. ${modelIssues[audit.modelIssue]} ${ranking}`;
+  else if (mixed) message = `${providerName} suggestions are marked AI-assisted. Built-in analysis filled the remaining spots. ${ranking}`;
   notice("result-notice", message);
   renderCards();
   if (state.selected) showBlueprint(state.selected);
@@ -127,17 +139,19 @@ function displayAudit(audit, focus) {
   if (focus) focusSection("results", "results-title");
 }
 
-async function loadAudit(url = null, focus = true) {
+async function loadAudit(url = null, focus = true, ai = null) {
   if (state.busy) return;
   state.busy = true;
   byId("scan-button").disabled = true;
   byId("sample-button").disabled = true;
   byId("website").readOnly = true;
-  if (url) notice("scan-status", "Reading public pages to identify the business and its customer workflows…");
+  byId("ai-provider").disabled = true;
+  byId("ai-key").disabled = true;
+  if (url) notice("scan-status", ai ? `Reading public pages and preparing ${providerNames[ai.provider]} analysis…` : "Reading public pages to identify the business and its customer workflows…");
   else notice("scan-status", "");
   try {
     const response = await fetch(url ? "/api/audit" : "/api/sample", url ? {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }),
+      method: "POST", headers: { "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify(ai ? { url, ai } : { url }),
     } : undefined);
     const audit = await response.json();
     if (!response.ok) throw new Error(audit.error ?? "Unable to finish this website scan.");
@@ -150,6 +164,8 @@ async function loadAudit(url = null, focus = true) {
     byId("scan-button").disabled = false;
     byId("sample-button").disabled = false;
     byId("website").readOnly = false;
+    byId("ai-provider").disabled = false;
+    byId("ai-key").disabled = false;
   }
 }
 
@@ -213,10 +229,26 @@ for (const id of ["cover", "flow-space"]) {
   });
 }
 
+function updateScanButton() {
+  const apiKey = byId("ai-key").value.trim();
+  const providerName = providerNames[byId("ai-provider").value];
+  byId("scan-button").textContent = apiKey ? `Analyze with ${providerName}` : "Analyze website";
+}
+
+byId("ai-key").addEventListener("input", updateScanButton);
+byId("ai-provider").addEventListener("change", () => {
+  byId("ai-key").value = "";
+  updateScanButton();
+});
 byId("audit-form").addEventListener("submit", (event) => {
   event.preventDefault();
   const url = byId("website").value.trim();
-  if (url) loadAudit(url);
+  if (!url || state.busy) return;
+  const apiKey = byId("ai-key").value.trim();
+  const provider = byId("ai-provider").value;
+  byId("ai-key").value = "";
+  updateScanButton();
+  loadAudit(url, true, apiKey ? { provider, apiKey } : null);
 });
 byId("sample-button").addEventListener("click", () => loadAudit());
 byId("motion-toggle").addEventListener("click", () => setMotion(!motionEnabled));

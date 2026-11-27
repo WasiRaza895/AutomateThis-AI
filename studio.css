@@ -15,7 +15,7 @@
 body { margin: 0; min-width: 320px; }
 [hidden] { display: none !important; }
 a { color: inherit; text-decoration: none; }
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 button:not(:disabled) { cursor: pointer; }
 button:disabled { opacity: .65; cursor: wait; }
 :focus-visible { outline: 2px solid #8c4a76; outline-offset: 4px; }
@@ -44,6 +44,13 @@ nav a:hover, nav .nav-active { background: #f5e8f0; color: #61294b; }
 .hero-intro { max-width: 425px; margin-top: 18px; color: var(--muted); font-size: 1.03rem; line-height: 1.6; }
 .audit-form { margin-top: 26px; }
 .audit-form label, .estimate-grid label { display: grid; gap: 6px; font-size: .88rem; font-weight: 680; }
+.ai-options { margin-bottom: 13px; border: 1px solid #e6cfdf; background: #fbf1f7; border-radius: 9px; }
+.ai-options summary { padding: 10px 12px; font-size: .9rem; color: var(--accent); }
+.ai-options summary span { margin-left: 5px; cursor: inherit; color: var(--muted); font-size: .8rem; font-weight: 500; }
+.ai-fields { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 8px; padding: 3px 12px 12px; }
+.ai-fields select, .ai-fields input { width: 100%; font-weight: 500; }
+.ai-fields select { appearance: none; border: 1px solid #ddcbd8; border-radius: 8px; color: var(--ink); background: white; min-height: 42px; padding: 9px 24px 9px 10px; background-image: conic-gradient(from 45deg, transparent 0 25%, var(--accent) 0 50%, transparent 0); background-size: 8px 8px; background-position: right 10px top 55%; background-repeat: no-repeat; }
+.ai-help { grid-column: 1 / -1; font-size: .82rem; line-height: 1.45; color: var(--muted); }
 .search-field { display: flex; gap: 8px; margin-top: 7px; }
 input { border: 1px solid #ddcbd8; border-radius: 8px; color: var(--ink); background: white; min-height: 42px; padding: 9px 11px; min-width: 0; }
 input::placeholder { color: #786879; }
@@ -176,6 +183,7 @@ h3 { letter-spacing: -.021em; font-size: 1rem; }
   .brand-mark { width: 29px; height: 29px; }
   .search-field { flex-wrap: wrap; }
   .search-field input { flex-basis: 100%; }
+  .ai-fields { grid-template-columns: minmax(0, 1fr); }
   .cover { height: 230px; }
   .cover-top, .cover-footer { inset-inline: 12px; font-size: .66rem; }
   .mini-card { min-width: 92px; min-height: 60px; gap: 3px; }

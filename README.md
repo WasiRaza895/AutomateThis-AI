@@ -17,7 +17,7 @@ Most people know AI automation is useful, but they do not know what to automate 
 - Risk controls for approval, privacy, and quality
 - Markdown copy export
 - JSON blueprint export
-- Website scan and optional Gemini-assisted analysis
+- Website scan with optional Gemini, Claude, or OpenAI analysis
 - Business-specific playbooks for payment services, online retail, and software
 - Editable savings estimates in the website audit
 - Browser-only manual planner
@@ -33,13 +33,15 @@ npm start
 
 Open `http://127.0.0.1:8780`, enter a public company website, or choose **Try a sample audit**. Change the estimated runs and minutes saved for any blueprint to model its impact. Open `planner.html` directly for the original manual planner.
 
-### Gemini setup
+### Optional AI-assisted audit
 
-Copy `.env.example` to `.env` and set `GEMINI_API_KEY` on the server. Built-in analysis uses signals from home, product, pricing, and support pages and works without a key. The report identifies its analysis mode. Set `GEMINI_MODEL` to choose another Gemini model that supports structured output.
+Expand **AI-assisted analysis**, choose Gemini, Claude, or OpenAI, and paste a provider API key. The app sends snippets from the scanned public pages to the provider you choose and uses its response to generate up to three source-linked workflows. The key is cleared from the form at submission and used only for that request. The app does not save it. Provider charges may apply.
+
+Leave the field blank to use built-in analysis. If the provider rejects the request or the ideas lack verifiable evidence, the report explains the fallback and shows what the built-in audit found.
 
 ### Hosting
 
-Vercel uses the included `vercel.json` and Node.js functions under `api/`. Add `GEMINI_API_KEY` as a server environment variable to enable Gemini. For a Node.js host, run `npm start`, set `HOST=0.0.0.0`, and use the provider’s `PORT`. Static-only hosting can serve `planner.html` and its assets.
+Vercel uses the included `vercel.json` and Node.js functions under `api/`. For a Node.js host, run `npm start`, set `HOST=0.0.0.0`, and use the provider’s `PORT`. To provide Gemini as the default for your own instance, set `GEMINI_API_KEY` and optionally `GEMINI_MODEL` on the server. An audit supplied with a visitor key uses the visitor’s selected provider. Static-only hosting can serve `planner.html` and its assets.
 
 ### Tests
 

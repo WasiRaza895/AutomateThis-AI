@@ -25,6 +25,22 @@
         <h1 id="hero-title">Find your next <em>three automations.</em></h1>
         <p class="hero-intro">Enter a company website. See what the business does, then get three workflow ideas grounded in how it serves customers.</p>
         <form id="audit-form" class="audit-form">
+          <details class="ai-options">
+            <summary>AI-assisted analysis <span>Optional</span></summary>
+            <div class="ai-fields">
+              <label>AI provider
+                <select id="ai-provider" aria-describedby="ai-help">
+                  <option value="gemini">Google Gemini</option>
+                  <option value="claude">Anthropic Claude</option>
+                  <option value="openai">OpenAI</option>
+                </select>
+              </label>
+              <label>API key
+                <input type="password" id="ai-key" autocomplete="off" spellcheck="false" autocapitalize="off" maxlength="1024" placeholder="Paste your provider key" aria-describedby="ai-help">
+              </label>
+              <p class="ai-help" id="ai-help">Leave the key blank to use the standard audit. A key is used for one scan and cleared after submission. Public page excerpts go to your selected provider, whose API charges may apply.</p>
+            </div>
+          </details>
           <label for="website">Company website</label>
           <div class="search-field">
             <input type="text" inputmode="url" id="website" name="website" placeholder="example.com" autocomplete="url" spellcheck="false" required maxlength="1000">
